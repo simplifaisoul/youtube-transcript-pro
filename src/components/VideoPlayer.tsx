@@ -38,14 +38,16 @@ export default function VideoPlayer({ videoId, currentTime, onTimeUpdate }: Vide
         onProgress={(state) => {
           onTimeUpdate(state.playedSeconds)
         }}
-        config={{
-          youtube: {
-            playerVars: {
-              modestbranding: 1,
-              rel: 0,
+        config={
+          {
+            youtube: {
+              playerVars: {
+                modestbranding: 1,
+                rel: 0,
+              },
             },
-          } as any,
-        }}
+          } as any
+        }
       />
     </div>
   )
