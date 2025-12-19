@@ -84,59 +84,39 @@ export async function fetchTranscript(
         continue
       }
 
-      // Handle XML response
-      if (api.type === 'xml' || response.headers.get('content-type')?.includes('xml')) {
-        const xml = await response.text()
+        // Handle XML response
+      const contentType = response.headers.get('content-type') || ''
+      const responseText = await response.text()
+      
+      if (api.type === 'xml' || contentType.includes('xml') || responseText.trim().startsWith('<?xml') || responseText.includes('<transcript>') || responseText.includes('<text')) {
         // Check if it's valid XML (not an error page)
-        if (xml.includes('<transcript>') || xml.includes('<text')) {
-          const segments = parseXMLTranscript(xml)
+        if (responseText.includes('<transcript>') || responseText.includes('<text')) {
+          const segments = parseXMLTranscript(responseText)
           if (segments.length > 0) {
             return segments
           }
         }
+        // If XML parsing returned empty, continue to next API
         continue
       }
 
         // Handle JSON response
       try {
-        const contentType = response.headers.get('content-type') || ''
         let data: any
 
-        // Try to parse as JSON first
-        if (contentType.includes('json') || api.type === 'json') {
-          try {
-            data = await response.json()
-          } catch (e) {
-            // If JSON parsing fails, try as text
-            const text = await response.text()
-            // Check if it's XML
-            if (text.includes('<transcript>') || text.includes('<text')) {
-              const segments = parseXMLTranscript(text)
-              if (segments.length > 0) {
-                return segments
-              }
-            }
-            // Try to parse as JSON from text
-            try {
-              data = JSON.parse(text)
-            } catch {
-              continue
-            }
-          }
-        } else {
-          // Try as text first
-          const text = await response.text()
-          if (text.includes('<transcript>') || text.includes('<text')) {
-            const segments = parseXMLTranscript(text)
+        // Try to parse as JSON
+        try {
+          data = JSON.parse(responseText)
+        } catch (e) {
+          // If JSON parsing fails, might be XML or other format
+          if (responseText.includes('<transcript>') || responseText.includes('<text')) {
+            const segments = parseXMLTranscript(responseText)
             if (segments.length > 0) {
               return segments
             }
           }
-          try {
-            data = JSON.parse(text)
-          } catch {
-            continue
-          }
+          // If not XML and not JSON, skip this API
+          continue
         }
 
         // Handle different API response formats
