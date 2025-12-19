@@ -111,6 +111,50 @@ Compared to other transcript extractors:
 - ✅ **Responsive** - Works on all devices
 - ✅ **Open Source** - Free and customizable
 
+## 🚀 Deployment
+
+### Deploy to Vercel (Recommended)
+
+The easiest way to deploy this app is using [Vercel](https://vercel.com):
+
+1. **Import your GitHub repository**
+   - Go to [Vercel](https://vercel.com/new)
+   - Click "Import Project"
+   - Select your `youtube-transcript-pro` repository
+
+2. **Automatic Configuration**
+   - Vercel will auto-detect Vite
+   - Build Command: `npm run build` (auto-detected)
+   - Output Directory: `dist` (auto-detected)
+   - Framework Preset: Vite (auto-detected)
+
+3. **Deploy**
+   - Click "Deploy"
+   - Your app will be live in seconds!
+
+**One-Click Deploy:**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/simplifaisoul/youtube-transcript-pro)
+
+### Deploy to Netlify
+
+1. Go to [Netlify](https://app.netlify.com)
+2. Click "Add new site" > "Import an existing project"
+3. Connect your GitHub repository
+4. Build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+5. Click "Deploy site"
+
+### Deploy to GitHub Pages
+
+1. Install `gh-pages`: `npm install --save-dev gh-pages`
+2. Add to `package.json` scripts:
+   ```json
+   "deploy": "npm run build && gh-pages -d dist"
+   ```
+3. Run: `npm run deploy`
+
 ## 📝 License
 
 MIT License - feel free to use this project for personal or commercial purposes.
