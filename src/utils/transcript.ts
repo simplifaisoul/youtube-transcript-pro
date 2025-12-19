@@ -39,18 +39,30 @@ export async function fetchTranscript(
       url: `https://getvideotranscript.com/api?videoId=${videoId}&lang=${language}`,
       type: 'json',
     },
-    // Try alternative endpoints
+    // Alternative API endpoints
     {
       url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
       type: 'json',
     },
-    // Try English as fallback if requested language fails
-    ...(language !== 'en' ? [{
-      url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=en`,
+    {
+      url: `https://api.getlate.dev/youtube-transcript?videoId=${videoId}&lang=${language}`,
       type: 'json',
-    }] : []),
+    },
+    // Try English as fallback if requested language fails
+    ...(language !== 'en' ? [
+      {
+        url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=en`,
+        type: 'json',
+      },
+      {
+        url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}&lang=en`,
+        type: 'json',
+      },
+    ] : []),
   ]
 
+  const errors: string[] = []
+  
   for (const api of apis) {
     try {
       const response = await fetch(api.url, {
@@ -63,6 +75,7 @@ export async function fetchTranscript(
       })
 
       if (!response.ok) {
+        errors.push(`API ${api.url}: ${response.status} ${response.statusText}`)
         continue
       }
 
@@ -174,8 +187,9 @@ export async function fetchTranscript(
     }
   }
 
-  // If all APIs fail, provide helpful error message
-  throw new Error(`Unable to fetch transcript for video ${videoId}. The video may not have captions enabled, or the transcript service is temporarily unavailable. Please try again or check if the video has captions.`)
+  // If all APIs fail, provide helpful error message with debugging info
+  console.error('All transcript APIs failed. Errors:', errors)
+  throw new Error(`Unable to fetch transcript for video ${videoId}. The video may not have captions enabled, or all transcript services are temporarily unavailable. Please try again later or verify the video has captions.`)
 }
 
 function parseXMLTranscript(xml: string): TranscriptSegment[] {
