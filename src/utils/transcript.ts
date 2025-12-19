@@ -24,47 +24,31 @@ export async function fetchTranscript(
   videoId: string,
   language: string = 'en'
 ): Promise<TranscriptSegment[]> {
-  // Try multiple APIs with better error handling
+  // Try multiple APIs with better error handling - prioritize CORS-enabled APIs
   const apis = [
-    // CORS-enabled APIs (try first)
+    // CORS-enabled APIs (try first - these work from browser)
     {
       url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=${language}`,
       type: 'json',
-      cors: true,
     },
     {
       url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}&lang=${language}`,
       type: 'json',
-      cors: true,
     },
     {
       url: `https://getvideotranscript.com/api?videoId=${videoId}&lang=${language}`,
       type: 'json',
-      cors: true,
     },
-    // YouTube API with CORS proxy
+    // Try alternative endpoints
     {
-      url: `https://cors-anywhere.herokuapp.com/https://www.youtube.com/api/timedtext?v=${videoId}&lang=${language}`,
-      type: 'xml',
-      cors: false,
+      url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
+      type: 'json',
     },
-    // Direct YouTube API (may fail due to CORS, but worth trying)
-    {
-      url: `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${language}`,
-      type: 'xml',
-      cors: false,
-    },
-    // Try English as fallback
-    {
+    // Try English as fallback if requested language fails
+    ...(language !== 'en' ? [{
       url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=en`,
       type: 'json',
-      cors: true,
-    },
-    {
-      url: `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en`,
-      type: 'xml',
-      cors: false,
-    },
+    }] : []),
   ]
 
   for (const api of apis) {
@@ -75,6 +59,7 @@ export async function fetchTranscript(
           'Accept': api.type === 'xml' ? 'application/xml, text/xml' : 'application/json',
         },
         mode: 'cors',
+        credentials: 'omit',
       })
 
       if (!response.ok) {
@@ -94,17 +79,55 @@ export async function fetchTranscript(
         continue
       }
 
-      // Handle JSON response
+        // Handle JSON response
       try {
-        const data = await response.json()
+        const contentType = response.headers.get('content-type') || ''
+        let data: any
+
+        // Try to parse as JSON first
+        if (contentType.includes('json') || api.type === 'json') {
+          try {
+            data = await response.json()
+          } catch (e) {
+            // If JSON parsing fails, try as text
+            const text = await response.text()
+            // Check if it's XML
+            if (text.includes('<transcript>') || text.includes('<text')) {
+              const segments = parseXMLTranscript(text)
+              if (segments.length > 0) {
+                return segments
+              }
+            }
+            // Try to parse as JSON from text
+            try {
+              data = JSON.parse(text)
+            } catch {
+              continue
+            }
+          }
+        } else {
+          // Try as text first
+          const text = await response.text()
+          if (text.includes('<transcript>') || text.includes('<text')) {
+            const segments = parseXMLTranscript(text)
+            if (segments.length > 0) {
+              return segments
+            }
+          }
+          try {
+            data = JSON.parse(text)
+          } catch {
+            continue
+          }
+        }
 
         // Handle different API response formats
         if (Array.isArray(data)) {
           const segments = data
             .map((item: any) => ({
-              text: item.text || item.transcript || item.caption || item.content || '',
-              start: item.start || item.startTime || item.offset || item.timestamp || 0,
-              duration: item.duration || item.dur || 3,
+              text: item.text || item.transcript || item.caption || item.content || item.snippet || '',
+              start: item.start || item.startTime || item.offset || item.timestamp || item.time || 0,
+              duration: item.duration || item.dur || item.length || 3,
             }))
             .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
           
@@ -113,18 +136,20 @@ export async function fetchTranscript(
           }
         }
 
-        if (data.transcript || data.segments || data.captions || data.items) {
-          const segmentsArray = data.transcript || data.segments || data.captions || data.items
-          const segments = segmentsArray
-            .map((item: any) => ({
-              text: item.text || item.transcript || item.caption || item.content || '',
-              start: item.start || item.startTime || item.offset || item.timestamp || 0,
-              duration: item.duration || item.dur || 3,
-            }))
-            .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
-          
-          if (segments.length > 0) {
-            return segments
+        if (data.transcript || data.segments || data.captions || data.items || data.data) {
+          const segmentsArray = data.transcript || data.segments || data.captions || data.items || data.data
+          if (Array.isArray(segmentsArray)) {
+            const segments = segmentsArray
+              .map((item: any) => ({
+                text: item.text || item.transcript || item.caption || item.content || item.snippet || '',
+                start: item.start || item.startTime || item.offset || item.timestamp || item.time || 0,
+                duration: item.duration || item.dur || item.length || 3,
+              }))
+              .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+            
+            if (segments.length > 0) {
+              return segments
+            }
           }
         }
 
@@ -140,16 +165,7 @@ export async function fetchTranscript(
           }
         }
       } catch (jsonErr) {
-        // If JSON parsing fails, might be XML
-        if (api.type === 'json') {
-          const text = await response.text()
-          if (text.includes('<transcript>') || text.includes('<text')) {
-            const segments = parseXMLTranscript(text)
-            if (segments.length > 0) {
-              return segments
-            }
-          }
-        }
+        // If all parsing fails, continue to next API
         continue
       }
     } catch (err) {
@@ -158,16 +174,8 @@ export async function fetchTranscript(
     }
   }
 
-  // Last resort: Try to get transcript list and use first available
-  try {
-    const listUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&type=list`
-    const listResponse = await fetch(listUrl, { mode: 'no-cors' })
-    // This might not work due to CORS, but worth trying
-  } catch (err) {
-    // Ignore
-  }
-
-  throw new Error('Unable to fetch transcript. The video may not have captions, or all transcript services are unavailable.')
+  // If all APIs fail, provide helpful error message
+  throw new Error(`Unable to fetch transcript for video ${videoId}. The video may not have captions enabled, or the transcript service is temporarily unavailable. Please try again or check if the video has captions.`)
 }
 
 function parseXMLTranscript(xml: string): TranscriptSegment[] {
