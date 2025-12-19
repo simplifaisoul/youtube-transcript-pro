@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Moon, Sun, Youtube, Download, Copy, Search, Languages, Play, Loader2 } from 'lucide-react'
-import ReactPlayer from 'react-player/youtube'
+import { Moon, Sun, Youtube, Download, Copy, Languages, Play, Loader2 } from 'lucide-react'
 import { extractVideoId, fetchTranscript, TranscriptSegment } from './utils/transcript'
 import TranscriptViewer from './components/TranscriptViewer'
 import VideoPlayer from './components/VideoPlayer'
@@ -182,7 +181,16 @@ function App() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   <LanguageSelector
                     value={selectedLanguage}
-                    onChange={setSelectedLanguage}
+                    onChange={(lang) => {
+                      setSelectedLanguage(lang)
+                      if (videoId) {
+                        setLoading(true)
+                        fetchTranscript(videoId, lang)
+                          .then(setTranscript)
+                          .catch(err => setError(err.message))
+                          .finally(() => setLoading(false))
+                      }
+                    }}
                     onReload={() => {
                       if (videoId) {
                         setLoading(true)
