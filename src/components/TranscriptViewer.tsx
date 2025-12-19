@@ -42,7 +42,7 @@ export default function TranscriptViewer({
           part.toLowerCase() === query.toLowerCase() ? (
             <mark
               key={i}
-              className="bg-yellow-300 dark:bg-yellow-600 px-1 rounded"
+              className="bg-purple-500 text-purple-100 px-1 rounded"
             >
               {part}
             </mark>
@@ -56,7 +56,7 @@ export default function TranscriptViewer({
 
   if (transcript.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+      <div className="p-8 text-center text-purple-400/60">
         <p>No transcript available. Try a different language or video.</p>
       </div>
     )
@@ -79,8 +79,8 @@ export default function TranscriptViewer({
                 p-4 rounded-lg cursor-pointer transition-all
                 ${
                   isActive
-                    ? 'bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 dark:border-blue-400 shadow-md'
-                    : 'bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-purple-900/50 border-2 border-purple-500 shadow-lg shadow-purple-500/30'
+                    : 'bg-gray-800/50 border border-purple-800/30 hover:bg-purple-900/30 hover:border-purple-700/50'
                 }
               `}
             >
@@ -90,8 +90,8 @@ export default function TranscriptViewer({
                     flex items-center gap-1 text-xs font-mono px-2 py-1 rounded
                     ${
                       isActive
-                        ? 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200'
-                        : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        ? 'bg-purple-700 text-purple-100 border border-purple-500'
+                        : 'bg-purple-900/50 text-purple-300 border border-purple-800/50'
                     }
                   `}
                   onClick={(e) => {
@@ -107,8 +107,8 @@ export default function TranscriptViewer({
                     flex-1 text-sm leading-relaxed
                     ${
                       isActive
-                        ? 'text-gray-900 dark:text-gray-100 font-medium'
-                        : 'text-gray-700 dark:text-gray-300'
+                        ? 'text-purple-100 font-medium'
+                        : 'text-purple-200/80'
                     }
                   `}
                 >

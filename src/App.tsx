@@ -9,7 +9,7 @@ import SearchBar from './components/SearchBar'
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode')
-    return saved ? JSON.parse(saved) : false
+    return saved ? JSON.parse(saved) : true // Default to dark mode
   })
   const [videoUrl, setVideoUrl] = useState('')
   const [videoId, setVideoId] = useState<string | null>(null)
@@ -94,28 +94,28 @@ function App() {
     : transcript
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
+      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-lg border-b border-purple-900/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-red-500 to-red-600 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg shadow-lg shadow-purple-500/50">
                 <Youtube className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-red-500 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent">
                   Transcript Pro
                 </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Free YouTube Transcript Extractor</p>
+                <p className="text-xs text-purple-400/70">Free YouTube Transcript Extractor</p>
               </div>
             </div>
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-lg bg-purple-900/30 hover:bg-purple-800/50 border border-purple-700/50 transition-colors"
               aria-label="Toggle dark mode"
             >
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {darkMode ? <Sun className="w-5 h-5 text-purple-400" /> : <Moon className="w-5 h-5 text-purple-400" />}
             </button>
           </div>
         </div>
@@ -124,10 +124,10 @@ function App() {
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Hero Section */}
         <div className="text-center mb-12 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent">
             Extract YouTube Transcripts Instantly
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+          <p className="text-lg text-purple-300/80 mb-8">
             Get transcripts from any YouTube video with a beautiful, modern interface
           </p>
 
@@ -139,12 +139,12 @@ function App() {
                 value={videoUrl}
                 onChange={(e) => setVideoUrl(e.target.value)}
                 placeholder="Paste YouTube URL here..."
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-colors text-base"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-purple-800/50 bg-gray-900 text-purple-100 placeholder-purple-500/50 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all text-base"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-xl font-semibold hover:from-purple-500 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/50 hover:shadow-purple-500/70 flex items-center gap-2"
               >
                 {loading ? (
                   <>
@@ -160,7 +160,7 @@ function App() {
               </button>
             </div>
             {error && (
-              <p className="mt-2 text-red-500 text-sm text-left">{error}</p>
+              <p className="mt-2 text-red-400 text-sm text-left">{error}</p>
             )}
           </form>
         </div>
@@ -177,7 +177,7 @@ function App() {
               />
               
               {/* Controls */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border border-gray-200 dark:border-gray-700">
+              <div className="bg-gray-900 rounded-xl p-4 shadow-lg shadow-purple-500/20 border border-purple-800/50">
                 <div className="flex flex-wrap gap-2 mb-4">
                   <LanguageSelector
                     value={selectedLanguage}
@@ -203,14 +203,14 @@ function App() {
                   />
                   <button
                     onClick={handleCopy}
-                    className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
                   >
                     <Copy className="w-4 h-4" />
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                   <button
                     onClick={handleDownload}
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 bg-purple-800 hover:bg-purple-900 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -226,13 +226,13 @@ function App() {
             </div>
 
             {/* Transcript Viewer */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Languages className="w-5 h-5" />
+            <div className="bg-gray-900 rounded-xl shadow-lg shadow-purple-500/20 border border-purple-800/50 overflow-hidden">
+              <div className="p-4 border-b border-purple-800/50 bg-gradient-to-r from-purple-900/30 to-purple-800/20">
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-purple-300">
+                  <Languages className="w-5 h-5 text-purple-400" />
                   Transcript
                   {transcript.length > 0 && (
-                    <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                    <span className="text-sm font-normal text-purple-400/70">
                       ({transcript.length} segments)
                     </span>
                   )}
@@ -251,30 +251,30 @@ function App() {
         {/* Features Section */}
         {!videoId && (
           <div className="mt-16 grid md:grid-cols-3 gap-6 animate-fade-in">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                <Youtube className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            <div className="bg-gray-900 rounded-xl p-6 shadow-lg shadow-purple-500/20 border border-purple-800/50">
+              <div className="w-12 h-12 bg-purple-900/50 rounded-lg flex items-center justify-center mb-4 border border-purple-700/50">
+                <Youtube className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="font-bold text-lg mb-2">Instant Extraction</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <h3 className="font-bold text-lg mb-2 text-purple-300">Instant Extraction</h3>
+              <p className="text-purple-300/70 text-sm">
                 Get transcripts from any YouTube video in seconds with our fast API
               </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
-                <Languages className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="bg-gray-900 rounded-xl p-6 shadow-lg shadow-purple-500/20 border border-purple-800/50">
+              <div className="w-12 h-12 bg-purple-900/50 rounded-lg flex items-center justify-center mb-4 border border-purple-700/50">
+                <Languages className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="font-bold text-lg mb-2">Multiple Languages</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <h3 className="font-bold text-lg mb-2 text-purple-300">Multiple Languages</h3>
+              <p className="text-purple-300/70 text-sm">
                 Support for multiple transcript languages and easy translation
               </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
-                <Download className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="bg-gray-900 rounded-xl p-6 shadow-lg shadow-purple-500/20 border border-purple-800/50">
+              <div className="w-12 h-12 bg-purple-900/50 rounded-lg flex items-center justify-center mb-4 border border-purple-700/50">
+                <Download className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="font-bold text-lg mb-2">Export Options</h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <h3 className="font-bold text-lg mb-2 text-purple-300">Export Options</h3>
+              <p className="text-purple-300/70 text-sm">
                 Copy to clipboard or download as text file for easy sharing
               </p>
             </div>
@@ -283,10 +283,10 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 py-8 border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
-        <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400 text-sm">
-          <p>Made with ❤️ - Free YouTube Transcript Extractor</p>
-          <p className="mt-2">100% Free • No Sign Up Required • No Limits</p>
+      <footer className="mt-16 py-8 border-t border-purple-900/50 bg-black/50">
+        <div className="container mx-auto px-4 text-center text-purple-400/70 text-sm">
+          <p className="text-purple-300">Made by <span className="font-bold text-purple-400">SimplifAI-1</span></p>
+          <p className="mt-2 text-purple-400/60">100% Free • No Sign Up Required • No Limits</p>
         </div>
       </footer>
     </div>
