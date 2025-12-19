@@ -45,6 +45,11 @@ export async function fetchTranscript(
       url: `https://getvideotranscript.com/api?videoId=${videoId}&lang=${language}`,
       type: 'json',
     },
+    // Alternative reliable API
+    {
+      url: `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${language}&fmt=json3`,
+      type: 'json',
+    },
     // Alternative API endpoints without lang parameter
     {
       url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
@@ -171,6 +176,26 @@ export async function fetchTranscript(
               start: index * 3,
               duration: 3,
             }))
+          }
+        }
+
+        // Handle YouTube's json3 format
+        if (data.events && Array.isArray(data.events)) {
+          const segments: TranscriptSegment[] = []
+          data.events.forEach((event: any) => {
+            if (event.segs && Array.isArray(event.segs)) {
+              const text = event.segs.map((seg: any) => seg.utf8 || '').join('')
+              if (text.trim()) {
+                segments.push({
+                  text: text.trim(),
+                  start: event.tStartMs / 1000,
+                  duration: event.dDurationMs ? event.dDurationMs / 1000 : 3,
+                })
+              }
+            }
+          })
+          if (segments.length > 0) {
+            return segments
           }
         }
       } catch (jsonErr) {
