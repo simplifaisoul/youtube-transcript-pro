@@ -46,9 +46,17 @@ function App() {
 
     try {
       const data = await fetchTranscript(id, selectedLanguage)
-      setTranscript(data)
+      if (data && data.length > 0) {
+        setTranscript(data)
+        setError(null)
+      } else {
+        setError('Transcript is empty. The video may not have captions.')
+        setVideoId(null)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transcript')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch transcript'
+      console.error('Transcript fetch error:', err)
+      setError(errorMessage)
       setVideoId(null)
     } finally {
       setLoading(false)

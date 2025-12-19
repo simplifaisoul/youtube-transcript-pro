@@ -178,13 +178,17 @@ export async function fetchTranscript(
         continue
       }
     } catch (err) {
-      // Silently continue to next API
+      // Log error for debugging
+      const errorMsg = err instanceof Error ? err.message : String(err)
+      errors.push(`API ${api.url}: ${errorMsg}`)
+      console.warn(`Failed to fetch from ${api.url}:`, err)
       continue
     }
   }
 
   // If all APIs fail, provide helpful error message with debugging info
   console.error('All transcript APIs failed. Errors:', errors)
+  console.error(`Attempted to fetch transcript for video: ${videoId}, language: ${language}`)
   throw new Error(`Unable to fetch transcript for video ${videoId}. The video may not have captions enabled, or all transcript services are temporarily unavailable. Please try again later or verify the video has captions.`)
 }
 
