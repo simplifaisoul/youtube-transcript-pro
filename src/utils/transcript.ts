@@ -26,7 +26,12 @@ export async function fetchTranscript(
 ): Promise<TranscriptSegment[]> {
   // Try multiple APIs with better error handling - prioritize CORS-enabled APIs
   const apis = [
-    // CORS-enabled APIs (try first - these work from browser)
+    // Try our own Vercel API endpoint first (if deployed on Vercel)
+    {
+      url: window.location.origin + `/api/transcript?videoId=${videoId}&lang=${language}`,
+      type: 'xml',
+    },
+    // CORS-enabled APIs (try next - these work from browser)
     {
       url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=${language}`,
       type: 'json',
@@ -44,12 +49,12 @@ export async function fetchTranscript(
       url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
       type: 'json',
     },
-    {
-      url: `https://api.getlate.dev/youtube-transcript?videoId=${videoId}&lang=${language}`,
-      type: 'json',
-    },
     // Try English as fallback if requested language fails
     ...(language !== 'en' ? [
+      {
+        url: `/api/transcript?videoId=${videoId}&lang=en`,
+        type: 'xml',
+      },
       {
         url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=en`,
         type: 'json',
