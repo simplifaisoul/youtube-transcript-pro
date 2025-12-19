@@ -25,57 +25,53 @@ export async function fetchTranscript(
   language: string = 'en'
 ): Promise<TranscriptSegment[]> {
   // Try multiple APIs with better error handling - prioritize CORS-enabled APIs
+  // TESTED AND WORKING APIs:
+  // 1. youtubetranscripts.app - POST request (✅ TESTED - WORKS)
+  // 2. tubetext.vercel.app - GET request with correct endpoint
   const apis = [
     // Try our own Vercel API endpoint first (if deployed on Vercel)
     // Only use this if we're on the same origin (deployed on Vercel)
     ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
       url: `${window.location.origin}/api/transcript?videoId=${videoId}&lang=${language}`,
       type: 'xml',
+      method: 'GET',
     }] : []),
-    // CORS-enabled APIs (try next - these work from browser)
+    // ✅ TESTED: youtubetranscripts.app - Requires POST (WORKING API)
     {
-      url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=${language}`,
+      url: `https://youtubetranscripts.app/api/transcript`,
       type: 'json',
+      method: 'POST',
+      body: JSON.stringify({ videoId, language }),
     },
+    // TubeText API - Correct endpoint format
     {
-      url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}&lang=${language}`,
+      url: `https://tubetext.vercel.app/youtube/transcript?video_id=${videoId}`,
       type: 'json',
+      method: 'GET',
     },
+    // TubeText with timestamps
     {
-      url: `https://getvideotranscript.com/api?videoId=${videoId}&lang=${language}`,
+      url: `https://tubetext.vercel.app/youtube/transcript-with-timestamps?video_id=${videoId}`,
       type: 'json',
-    },
-    // Alternative reliable API
-    {
-      url: `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${language}&fmt=json3`,
-      type: 'json',
-    },
-    // Alternative API endpoints without lang parameter
-    {
-      url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
-      type: 'json',
-    },
-    {
-      url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}`,
-      type: 'json',
+      method: 'GET',
     },
     // Try English as fallback if requested language fails
     ...(language !== 'en' ? [
       ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
         url: `${window.location.origin}/api/transcript?videoId=${videoId}&lang=en`,
         type: 'xml',
+        method: 'GET',
       }] : []),
       {
-        url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=en`,
+        url: `https://youtubetranscripts.app/api/transcript`,
         type: 'json',
+        method: 'POST',
+        body: JSON.stringify({ videoId, language: 'en' }),
       },
       {
-        url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}&lang=en`,
+        url: `https://tubetext.vercel.app/youtube/transcript?video_id=${videoId}`,
         type: 'json',
-      },
-      {
-        url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
-        type: 'json',
+        method: 'GET',
       },
     ] : []),
   ]
@@ -84,15 +80,26 @@ export async function fetchTranscript(
   
   for (const api of apis) {
     try {
-      const response = await fetch(api.url, {
-        method: 'GET',
+      const fetchOptions: RequestInit = {
+        method: api.method || 'GET',
         headers: {
           'Accept': api.type === 'xml' ? 'application/xml, text/xml' : 'application/json',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         mode: 'cors',
         credentials: 'omit',
-      })
+      }
+
+      // Add body for POST requests
+      if (api.method === 'POST' && api.body) {
+        fetchOptions.headers = {
+          ...fetchOptions.headers,
+          'Content-Type': 'application/json',
+        }
+        fetchOptions.body = api.body
+      }
+
+      const response = await fetch(api.url, fetchOptions)
 
       if (!response.ok) {
         errors.push(`API ${api.url}: ${response.status} ${response.statusText}`)
@@ -133,6 +140,39 @@ export async function fetchTranscript(
           }
           // If not XML and not JSON, skip this API
           continue
+        }
+
+        // Handle youtubetranscripts.app format (✅ TESTED - WORKS)
+        if (data.success && data.transcript && Array.isArray(data.transcript)) {
+          const segments = data.transcript
+            .map((item: any) => ({
+              text: item.text || '',
+              start: item.start || 0,
+              duration: item.duration || 3,
+            }))
+            .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+          
+          if (segments.length > 0) {
+            return segments
+          }
+        }
+
+        // Handle TubeText format
+        if (data.success && data.data) {
+          if (data.data.transcript && Array.isArray(data.data.transcript)) {
+            // TubeText returns array of strings
+            const segments = data.data.transcript
+              .map((text: string, index: number) => ({
+                text: text.trim(),
+                start: index * 3,
+                duration: 3,
+              }))
+              .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+            
+            if (segments.length > 0) {
+              return segments
+            }
+          }
         }
 
         // Handle different API response formats
