@@ -84,10 +84,11 @@ export async function fetchTranscript(
         continue
       }
 
-        // Handle XML response
+        // Get response text once
       const contentType = response.headers.get('content-type') || ''
       const responseText = await response.text()
       
+      // Handle XML response
       if (api.type === 'xml' || contentType.includes('xml') || responseText.trim().startsWith('<?xml') || responseText.includes('<transcript>') || responseText.includes('<text')) {
         // Check if it's valid XML (not an error page)
         if (responseText.includes('<transcript>') || responseText.includes('<text')) {
@@ -100,7 +101,7 @@ export async function fetchTranscript(
         continue
       }
 
-        // Handle JSON response
+      // Handle JSON response
       try {
         let data: any
 
