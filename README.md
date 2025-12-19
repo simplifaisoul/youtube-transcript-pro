@@ -2,6 +2,8 @@
 
 A beautiful, modern YouTube transcript extractor with advanced features. Extract transcripts from any YouTube video instantly with a sleek, user-friendly interface.
 
+> **Latest Update**: All TypeScript errors fixed, ESLint 9 updated, and optimized for Vercel deployment! 🚀
+
 ![YouTube Transcript Pro](https://img.shields.io/badge/YouTube-Transcript%20Pro-red?style=for-the-badge&logo=youtube)
 ![React](https://img.shields.io/badge/React-18.2-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue?style=for-the-badge&logo=typescript)
