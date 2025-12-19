@@ -44,7 +44,7 @@ export default function VideoPlayer({ videoId, currentTime, onTimeUpdate }: Vide
               modestbranding: 1,
               rel: 0,
             },
-          },
+          } as any,
         }}
       />
     </div>
