@@ -45,9 +45,13 @@ export async function fetchTranscript(
       url: `https://getvideotranscript.com/api?videoId=${videoId}&lang=${language}`,
       type: 'json',
     },
-    // Alternative API endpoints
+    // Alternative API endpoints without lang parameter
     {
       url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
+      type: 'json',
+    },
+    {
+      url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}`,
       type: 'json',
     },
     // Try English as fallback if requested language fails
@@ -64,6 +68,10 @@ export async function fetchTranscript(
         url: `https://tubetext.vercel.app/api/transcript?videoId=${videoId}&lang=en`,
         type: 'json',
       },
+      {
+        url: `https://youtubetranscripts.app/api?videoId=${videoId}`,
+        type: 'json',
+      },
     ] : []),
   ]
 
@@ -75,6 +83,7 @@ export async function fetchTranscript(
         method: 'GET',
         headers: {
           'Accept': api.type === 'xml' ? 'application/xml, text/xml' : 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         mode: 'cors',
         credentials: 'omit',
