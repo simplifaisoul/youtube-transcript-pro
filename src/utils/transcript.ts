@@ -27,10 +27,11 @@ export async function fetchTranscript(
   // Try multiple APIs with better error handling - prioritize CORS-enabled APIs
   const apis = [
     // Try our own Vercel API endpoint first (if deployed on Vercel)
-    {
-      url: window.location.origin + `/api/transcript?videoId=${videoId}&lang=${language}`,
+    // Only use this if we're on the same origin (deployed on Vercel)
+    ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
+      url: `${window.location.origin}/api/transcript?videoId=${videoId}&lang=${language}`,
       type: 'xml',
-    },
+    }] : []),
     // CORS-enabled APIs (try next - these work from browser)
     {
       url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=${language}`,
@@ -51,10 +52,10 @@ export async function fetchTranscript(
     },
     // Try English as fallback if requested language fails
     ...(language !== 'en' ? [
-      {
-        url: `/api/transcript?videoId=${videoId}&lang=en`,
+      ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
+        url: `${window.location.origin}/api/transcript?videoId=${videoId}&lang=en`,
         type: 'xml',
-      },
+      }] : []),
       {
         url: `https://youtubetranscripts.app/api?videoId=${videoId}&lang=en`,
         type: 'json',
