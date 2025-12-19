@@ -18,14 +18,6 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // First, try to get available caption tracks
-    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`
-    const watchResponse = await fetch(watchUrl)
-    const watchHtml = await watchResponse.text()
-    
-    // Extract caption tracks from the page
-    const captionTracksMatch = watchHtml.match(/"captionTracks":\[(.*?)\]/)
-    
     // Try YouTube's API directly (server-side, no CORS issues)
     const languages = [lang, 'en', 'en-US', 'en-GB']
     
