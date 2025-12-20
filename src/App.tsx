@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Moon, Sun, Youtube, Download, Copy, Languages, Play, Loader2 } from 'lucide-react'
+import { Moon, Sun, Youtube, Download, Copy, Languages, Play, Loader2, AlertCircle } from 'lucide-react'
 import { extractVideoId, fetchTranscript, TranscriptSegment } from './utils/transcript'
 import TranscriptViewer from './components/TranscriptViewer'
 import VideoPlayer from './components/VideoPlayer'
@@ -168,7 +168,15 @@ function App() {
               </button>
             </div>
             {error && (
-              <p className="mt-2 text-red-400 text-sm text-left">{error}</p>
+              <div className="mt-3 p-4 bg-red-900/20 border border-red-800/50 rounded-lg text-left">
+                <p className="text-red-400 font-medium mb-2 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </p>
+                <p className="text-red-300/70 text-xs">
+                  💡 <strong>Tip:</strong> Make sure the video has captions enabled. You can check by looking for the "CC" button on the YouTube video player. Try a different video that has captions available.
+                </p>
+              </div>
             )}
           </form>
         </div>
