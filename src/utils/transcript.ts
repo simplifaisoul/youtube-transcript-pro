@@ -55,6 +55,12 @@ export async function fetchTranscript(
       type: 'json',
       method: 'GET',
     },
+    // Additional fallback: Try YouTube's direct API through proxy (if available)
+    {
+      url: `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${language}&fmt=json3`,
+      type: 'json',
+      method: 'GET',
+    },
     // Try English as fallback if requested language fails
     ...(language !== 'en' ? [
       ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
