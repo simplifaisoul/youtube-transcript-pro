@@ -1,26 +1,45 @@
 // Vercel serverless function to fetch YouTube transcripts (bypasses CORS)
 export default async function handler(req: any, res: any) {
-  // Enable CORS
+  // Enable CORS - must be set before any response
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') {
     res.status(200).end()
     return
   }
 
-  const { videoId, lang = 'en' } = req.query
+  // Handle both GET and POST
+  let videoId: string | undefined
+  let lang: string = 'en'
+  
+  if (req.method === 'POST') {
+    try {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      videoId = body?.videoId
+      lang = body?.lang || body?.language || 'en'
+    } catch (e) {
+      videoId = req.body?.videoId
+      lang = req.body?.lang || req.body?.language || 'en'
+    }
+  } else {
+    videoId = req.query?.videoId
+    lang = req.query?.lang || 'en'
+  }
 
-  if (!videoId || typeof videoId !== 'string') {
+  if (!videoId || (typeof videoId !== 'string' && typeof videoId !== 'number')) {
     return res.status(400).json({ error: 'videoId is required' })
   }
+
+  const videoIdStr = String(videoId)
+  const langStr = String(lang || 'en')
 
   try {
     // First, try to get caption tracks list to find available languages
     try {
-      const tracksUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&type=list`
+      const tracksUrl = `https://www.youtube.com/api/timedtext?v=${videoIdStr}&type=list`
       const tracksResponse = await fetch(tracksUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -34,12 +53,12 @@ export default async function handler(req: any, res: any) {
         if (langMatches && langMatches.length > 0) {
           const availableLangs = langMatches.map(m => m.match(/lang_code="([^"]+)"/)?.[1]).filter(Boolean)
           // Try requested language first, then available languages
-          const languagesToTry = [lang, ...availableLangs, 'en', 'en-US', 'en-GB']
+          const languagesToTry = [langStr, ...availableLangs, 'en', 'en-US', 'en-GB']
           
           for (const tryLang of languagesToTry) {
             if (!tryLang) continue
             try {
-              const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${tryLang}&fmt=srv3`
+              const url = `https://www.youtube.com/api/timedtext?v=${videoIdStr}&lang=${tryLang}&fmt=srv3`
               const response = await fetch(url, {
                 headers: {
                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -64,7 +83,7 @@ export default async function handler(req: any, res: any) {
     }
     
     // Try YouTube's API directly (server-side, no CORS issues)
-    const languages = [lang, 'en', 'en-US', 'en-GB', 'en-CA', 'en-AU']
+    const languages = [langStr, 'en', 'en-US', 'en-GB', 'en-CA', 'en-AU']
     
     for (const tryLang of languages) {
       try {
@@ -72,7 +91,7 @@ export default async function handler(req: any, res: any) {
         const formats = ['srv3', 'srv1', 'srv2', 'ttml', 'vtt']
         for (const fmt of formats) {
           try {
-            const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${tryLang}&fmt=${fmt}`
+            const url = `https://www.youtube.com/api/timedtext?v=${videoIdStr}&lang=${tryLang}&fmt=${fmt}`
             const response = await fetch(url, {
               headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
