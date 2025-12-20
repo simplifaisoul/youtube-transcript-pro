@@ -288,7 +288,13 @@ export async function fetchTranscript(
   // If all APIs fail, provide helpful error message with debugging info
   console.error('All transcript APIs failed. Errors:', errors)
   console.error(`Attempted to fetch transcript for video: ${videoId}, language: ${language}`)
-  throw new Error(`Unable to fetch transcript for video ${videoId}. The video may not have captions enabled, or all transcript services are temporarily unavailable. Please try again later or verify the video has captions.`)
+  
+  // Provide more specific error message
+  if (errors.length === 0) {
+    throw new Error(`No transcript available for video ${videoId}. This video may not have captions enabled. Please check if the video has the "CC" (Closed Captions) button available on YouTube.`)
+  } else {
+    throw new Error(`Unable to fetch transcript for video ${videoId}. The video may not have captions enabled, or all transcript services are temporarily unavailable. Please try again later or verify the video has captions.`)
+  }
 }
 
 function parseXMLTranscript(xml: string): TranscriptSegment[] {
