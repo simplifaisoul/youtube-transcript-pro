@@ -1,36 +1,61 @@
 // Vercel serverless function to fetch YouTube transcripts (bypasses CORS)
-export default async function handler(req, res) {
-  // Enable CORS - must be set before any response
-  res.setHeader('Access-Control-Allow-Credentials', 'true')
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+// Using named exports for better Vercel compatibility
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
+export async function GET(request) {
+  return handleRequest(request, 'GET')
+}
+
+export async function POST(request) {
+  return handleRequest(request, 'POST')
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,OPTIONS,POST',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
+}
+
+async function handleRequest(request, method) {
+  // Enable CORS
+  const corsHeaders = {
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,OPTIONS,POST',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   }
 
   // Handle both GET and POST
   let videoId
   let lang = 'en'
   
-  if (req.method === 'POST') {
+  if (method === 'POST') {
     try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+      const body = await request.json()
       videoId = body?.videoId
       lang = body?.lang || body?.language || 'en'
     } catch (e) {
-      videoId = req.body?.videoId
-      lang = req.body?.lang || req.body?.language || 'en'
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
   } else {
-    videoId = req.query?.videoId
-    lang = req.query?.lang || 'en'
+    const url = new URL(request.url)
+    videoId = url.searchParams.get('videoId')
+    lang = url.searchParams.get('lang') || 'en'
   }
 
   if (!videoId || (typeof videoId !== 'string' && typeof videoId !== 'number')) {
-    return res.status(400).json({ error: 'videoId is required' })
+    return new Response(JSON.stringify({ error: 'videoId is required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   const videoIdStr = String(videoId)
@@ -71,8 +96,10 @@ export default async function handler(req, res) {
               if (response.ok) {
                 const xml = await response.text()
                 if (xml && (xml.includes('<transcript>') || xml.includes('<text'))) {
-                  res.setHeader('Content-Type', 'application/xml')
-                  return res.status(200).send(xml)
+                  return new Response(xml, {
+                    status: 200,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+                  })
                 }
               }
             } catch (err) {
@@ -104,8 +131,10 @@ export default async function handler(req, res) {
             if (response.ok) {
               const xml = await response.text()
               if (xml && (xml.includes('<transcript>') || xml.includes('<text') || xml.includes('WEBVTT'))) {
-                res.setHeader('Content-Type', 'application/xml')
-                return res.status(200).send(xml)
+                return new Response(xml, {
+                  status: 200,
+                  headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+                })
               }
             }
           } catch (err) {
@@ -117,9 +146,15 @@ export default async function handler(req, res) {
       }
     }
     
-    return res.status(404).json({ error: 'Transcript not available for this video. The video may not have captions enabled.' })
+    return new Response(JSON.stringify({ error: 'Transcript not available for this video. The video may not have captions enabled.' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   } catch (error) {
     console.error('Transcript fetch error:', error)
-    res.status(500).json({ error: 'Failed to fetch transcript' })
+    return new Response(JSON.stringify({ error: 'Failed to fetch transcript' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 }
