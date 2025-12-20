@@ -159,18 +159,46 @@ export async function fetchTranscript(
 
         // Handle TubeText format
         if (data.success && data.data) {
+          // TubeText with timestamps format
           if (data.data.transcript && Array.isArray(data.data.transcript)) {
-            // TubeText returns array of strings
-            const segments = data.data.transcript
-              .map((text: string, index: number) => ({
+            // Check if it's an array of objects with timestamps or just strings
+            if (data.data.transcript.length > 0 && typeof data.data.transcript[0] === 'object' && data.data.transcript[0].text) {
+              // Has timestamps
+              const segments = data.data.transcript
+                .map((item: any) => ({
+                  text: (item.text || item.transcript || '').trim(),
+                  start: item.start || item.timestamp || 0,
+                  duration: item.duration || 3,
+                }))
+                .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+              
+              if (segments.length > 0) {
+                return segments
+              }
+            } else {
+              // Just array of strings
+              const segments = data.data.transcript
+                .map((text: string, index: number) => ({
+                  text: text.trim(),
+                  start: index * 3,
+                  duration: 3,
+                }))
+                .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+              
+              if (segments.length > 0) {
+                return segments
+              }
+            }
+          }
+          // TubeText full_text format
+          if (data.data.full_text && typeof data.data.full_text === 'string') {
+            const sentences = data.data.full_text.split(/[.!?]+/).filter((s: string) => s.trim().length > 0)
+            if (sentences.length > 0) {
+              return sentences.map((text: string, index: number) => ({
                 text: text.trim(),
                 start: index * 3,
                 duration: 3,
               }))
-              .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
-            
-            if (segments.length > 0) {
-              return segments
             }
           }
         }
