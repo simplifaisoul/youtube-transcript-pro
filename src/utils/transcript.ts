@@ -29,9 +29,12 @@ export async function fetchTranscript(
   // 1. youtubetranscripts.app - POST request (✅ TESTED - WORKS)
   // 2. tubetext.vercel.app - GET request with correct endpoint
   const apis = [
-    // Try our own Vercel API endpoint first (if deployed on Vercel)
-    // Only use this if we're on the same origin (deployed on Vercel)
-    ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
+    // Skip Vercel API on preview deployments (they return 401)
+    // Only try on production domain (not preview URLs)
+    ...(typeof window !== 'undefined' && 
+        window.location.hostname !== 'localhost' && 
+        !window.location.hostname.includes('vercel.app') && 
+        !window.location.hostname.includes('netlify.app') ? [{
       url: `${window.location.origin}/api/transcript?videoId=${videoId}&lang=${language}`,
       type: 'xml',
       method: 'GET',
@@ -64,7 +67,10 @@ export async function fetchTranscript(
     },
     // Try English as fallback if requested language fails
     ...(language !== 'en' ? [
-      ...(typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? [{
+      ...(typeof window !== 'undefined' && 
+          window.location.hostname !== 'localhost' && 
+          !window.location.hostname.includes('vercel.app') && 
+          !window.location.hostname.includes('netlify.app') ? [{
         url: `${window.location.origin}/api/transcript?videoId=${videoId}&lang=en`,
         type: 'xml',
         method: 'GET',
