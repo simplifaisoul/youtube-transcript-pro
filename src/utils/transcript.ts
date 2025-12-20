@@ -37,6 +37,7 @@ export async function fetchTranscript(
       method: 'GET',
     }] : []),
     // ✅ TESTED: youtubetranscripts.app - Requires POST (WORKING API)
+    // Note: May have CORS issues on preview deployments, but works on production
     {
       url: `https://youtubetranscripts.app/api/transcript`,
       type: 'json',
@@ -90,7 +91,6 @@ export async function fetchTranscript(
         method: api.method || 'GET',
         headers: {
           'Accept': api.type === 'xml' ? 'application/xml, text/xml' : 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         mode: 'cors',
         credentials: 'omit',
@@ -105,7 +105,21 @@ export async function fetchTranscript(
         fetchOptions.body = api.body
       }
 
-      const response = await fetch(api.url, fetchOptions)
+      // Try to fetch with error handling
+      let response: Response
+      try {
+        response = await fetch(api.url, fetchOptions)
+      } catch (fetchError) {
+        // CORS or network error - log and continue to next API
+        const errorMsg = fetchError instanceof Error ? fetchError.message : String(fetchError)
+        if (errorMsg.includes('CORS') || errorMsg.includes('Failed to fetch')) {
+          errors.push(`API ${api.url}: CORS blocked or network error`)
+          console.warn(`CORS/Network error for ${api.url}:`, fetchError)
+        } else {
+          errors.push(`API ${api.url}: ${errorMsg}`)
+        }
+        continue
+      }
 
       if (!response.ok) {
         errors.push(`API ${api.url}: ${response.status} ${response.statusText}`)
