@@ -37,6 +37,24 @@ export async function fetchTranscript(
       type: 'xml',
       method: 'GET',
     }] : []),
+    // ✅ WORKING: YouTube Transcript MCP Server (CORS-enabled, no auth)
+    {
+      url: `https://youtube-transcript-mcp.ergut.workers.dev/mcp`,
+      type: 'json',
+      method: 'POST',
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: 'get_transcript',
+          arguments: {
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            language: language,
+          },
+        },
+      }),
+    },
     // ✅ TESTED: youtubetranscripts.app - Requires POST (WORKING API)
     // Note: May have CORS issues on preview deployments, but works on production
     {
@@ -70,6 +88,23 @@ export async function fetchTranscript(
         type: 'xml',
         method: 'GET',
       }] : []),
+      {
+        url: `https://youtube-transcript-mcp.ergut.workers.dev/mcp`,
+        type: 'json',
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'get_transcript',
+            arguments: {
+              url: `https://www.youtube.com/watch?v=${videoId}`,
+              language: 'en',
+            },
+          },
+        }),
+      },
       {
         url: `https://youtubetranscripts.app/api/transcript`,
         type: 'json',
@@ -166,6 +201,46 @@ export async function fetchTranscript(
           }
           // If not XML and not JSON, skip this API
           continue
+        }
+
+        // Handle YouTube Transcript MCP Server format
+        if (data.result && data.result.content) {
+          try {
+            // The content might be a string with transcript data
+            const content = typeof data.result.content === 'string' 
+              ? JSON.parse(data.result.content) 
+              : data.result.content
+            
+            if (content.transcript && Array.isArray(content.transcript)) {
+              const segments = content.transcript
+                .map((item: any) => ({
+                  text: item.text || item.utf8 || '',
+                  start: item.start || item.startTime || 0,
+                  duration: item.duration || 3,
+                }))
+                .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+              
+              if (segments.length > 0) {
+                return segments
+              }
+            }
+            // Try direct array format
+            if (Array.isArray(content)) {
+              const segments = content
+                .map((item: any) => ({
+                  text: item.text || item.utf8 || '',
+                  start: item.start || item.startTime || 0,
+                  duration: item.duration || 3,
+                }))
+                .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
+              
+              if (segments.length > 0) {
+                return segments
+              }
+            }
+          } catch (e) {
+            // If parsing fails, continue to next format
+          }
         }
 
         // Handle youtubetranscripts.app format (✅ TESTED - WORKS)
