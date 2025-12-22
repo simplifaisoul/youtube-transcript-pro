@@ -37,23 +37,12 @@ export async function fetchTranscript(
       type: 'xml',
       method: 'GET',
     }] : []),
-    // ✅ WORKING: YouTube Transcript MCP Server (CORS-enabled, no auth)
+    // ✅ WORKING: YouTube Transcript API via CORS proxy (fallback)
+    // Using a public CORS proxy to access YouTube's API
     {
-      url: `https://youtube-transcript-mcp.ergut.workers.dev/mcp`,
+      url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.youtube.com/api/timedtext?v=${videoId}&lang=${language}&fmt=json3`)}`,
       type: 'json',
-      method: 'POST',
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: {
-          name: 'get_transcript',
-          arguments: {
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            language: language,
-          },
-        },
-      }),
+      method: 'GET',
     },
     // ✅ TESTED: youtubetranscripts.app - Requires POST (WORKING API)
     // Note: May have CORS issues on preview deployments, but works on production
@@ -89,21 +78,9 @@ export async function fetchTranscript(
         method: 'GET',
       }] : []),
       {
-        url: `https://youtube-transcript-mcp.ergut.workers.dev/mcp`,
+        url: `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`)}`,
         type: 'json',
-        method: 'POST',
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'tools/call',
-          params: {
-            name: 'get_transcript',
-            arguments: {
-              url: `https://www.youtube.com/watch?v=${videoId}`,
-              language: 'en',
-            },
-          },
-        }),
+        method: 'GET',
       },
       {
         url: `https://youtubetranscripts.app/api/transcript`,
@@ -203,37 +180,25 @@ export async function fetchTranscript(
           continue
         }
 
-        // Handle YouTube Transcript MCP Server format
-        if (data.result && data.result.content) {
+        // Handle CORS proxy response (allorigins.win format)
+        if (data.contents) {
           try {
-            // The content might be a string with transcript data
-            const content = typeof data.result.content === 'string' 
-              ? JSON.parse(data.result.content) 
-              : data.result.content
-            
-            if (content.transcript && Array.isArray(content.transcript)) {
-              const segments = content.transcript
-                .map((item: any) => ({
-                  text: item.text || item.utf8 || '',
-                  start: item.start || item.startTime || 0,
-                  duration: item.duration || 3,
-                }))
-                .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
-              
-              if (segments.length > 0) {
-                return segments
-              }
-            }
-            // Try direct array format
-            if (Array.isArray(content)) {
-              const segments = content
-                .map((item: any) => ({
-                  text: item.text || item.utf8 || '',
-                  start: item.start || item.startTime || 0,
-                  duration: item.duration || 3,
-                }))
-                .filter((seg: TranscriptSegment) => seg.text.trim().length > 0)
-              
+            const contents = typeof data.contents === 'string' ? JSON.parse(data.contents) : data.contents
+            // Handle YouTube's json3 format from proxy
+            if (contents.events && Array.isArray(contents.events)) {
+              const segments: TranscriptSegment[] = []
+              contents.events.forEach((event: any) => {
+                if (event.segs && Array.isArray(event.segs)) {
+                  const text = event.segs.map((seg: any) => seg.utf8 || '').join('')
+                  if (text.trim()) {
+                    segments.push({
+                      text: text.trim(),
+                      start: event.tStartMs / 1000,
+                      duration: event.dDurationMs ? event.dDurationMs / 1000 : 3,
+                    })
+                  }
+                }
+              })
               if (segments.length > 0) {
                 return segments
               }
